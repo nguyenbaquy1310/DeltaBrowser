@@ -20,19 +20,19 @@ class MainActivity : Activity() {
     private val webs = mutableListOf<WebView>()
     private var active = 0
     private var desktop = false
-    private lateinit var url: EditText
+    private lateinit var urlBar: EditText
     private lateinit var panes: LinearLayout
     private lateinit var aiBox: LinearLayout
     private lateinit var ai: WebView
     private lateinit var aiTitle: TextView
-    private lateinit var progress: ProgressBar
+    private lateinit var progressBar: ProgressBar
 
     private fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
     private fun round(c: Int, r: Int) = GradientDrawable().apply { setColor(c); cornerRadius = dp(r).toFloat() }
 
-    private fun btn(t: String, f: () -> Unit) = TextView(this).apply {
+    private fun btn(t: String, f: (View) -> Unit) = TextView(this).apply {
         text = t; setTextColor(Color.WHITE); textSize = 17f; gravity = Gravity.CENTER
-        setPadding(dp(10), dp(8), dp(10), dp(8)); setOnClickListener { f() }
+        setPadding(dp(10), dp(8), dp(10), dp(8)); setOnClickListener { f(it) }
     }
 
     override fun onCreate(b: Bundle?) {
@@ -43,20 +43,20 @@ class MainActivity : Activity() {
 
         val bar = LinearLayout(this).apply { setBackgroundColor(BAR); gravity = Gravity.CENTER_VERTICAL; setPadding(dp(8), dp(6), dp(4), dp(6)) }
         bar.addView(ImageView(this).apply { setImageResource(R.drawable.logo); setOnClickListener { load(HOME) } }, LinearLayout.LayoutParams(dp(30), dp(30)))
-        url = EditText(this).apply {
+        urlBar = EditText(this).apply {
             setSingleLine(); setTextColor(Color.WHITE); setHintTextColor(0xFF8899AA.toInt()); hint = "Tìm kiếm hoặc nhập địa chỉ"
             textSize = 14f; background = round(0xFF22324A.toInt(), 20); setPadding(dp(14), dp(8), dp(14), dp(8))
             imeOptions = android.view.inputmethod.EditorInfo.IME_ACTION_GO
-            setOnEditorActionListener { _, _, _ -> load(url.text.toString()); clearFocus(); true }
+            setOnEditorActionListener { _, _, _ -> load(urlBar.text.toString()); clearFocus(); true }
             setSelectAllOnFocus(true)
         }
-        bar.addView(url, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { marginStart = dp(8); marginEnd = dp(4) })
+        bar.addView(urlBar, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { marginStart = dp(8); marginEnd = dp(4) })
         bar.addView(btn("◫") { toggleSplit() }); bar.addView(btn("✨") { toggleAi() })
         bar.addView(btn("⌘") { devTools() }); bar.addView(btn("⋮") { menu(it) })
         root.addView(bar)
-        progress = ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal).apply {
+        progressBar = ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal).apply {
             progressDrawable.setColorFilter(BLUE, PorterDuff.Mode.SRC_IN); visibility = View.GONE }
-        root.addView(progress, LinearLayout.LayoutParams(-1, dp(3)))
+        root.addView(progressBar, LinearLayout.LayoutParams(-1, dp(3)))
 
         panes = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         root.addView(panes, LinearLayout.LayoutParams(-1, 0, 1f))
@@ -82,10 +82,10 @@ class MainActivity : Activity() {
         CookieManager.getInstance().setAcceptThirdPartyCookies(this, true)
         addJavascriptInterface(object { @JavascriptInterface fun ask(t: String) { runOnUiThread { openAi("Hãy trả lời/giải thích giúp tôi: $t") } } }, "Delta")
         webViewClient = object : WebViewClient() {
-            override fun onPageFinished(v: WebView, u: String) { v.evaluateJavascript(SELECT_JS, null); if (v === webs.getOrNull(active)) url.setText(u) }
+            override fun onPageFinished(v: WebView, u: String) { v.evaluateJavascript(SELECT_JS, null); if (v === webs.getOrNull(active)) urlBar.setText(u) }
         }
         webChromeClient = object : WebChromeClient() {
-            override fun onProgressChanged(v: WebView, p: Int) { if (v === webs.getOrNull(active)) { progress.progress = p; progress.visibility = if (p < 100) View.VISIBLE else View.GONE } }
+            override fun onProgressChanged(v: WebView, p: Int) { if (v === webs.getOrNull(active)) { progressBar.progress = p; progressBar.visibility = if (p < 100) View.VISIBLE else View.GONE } }
         }
         setOnTouchListener { v, _ -> webs.indexOf(v).let { if (it >= 0) { active = it; highlight() } }; false }
     }
